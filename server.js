@@ -10,11 +10,7 @@ var metricsd = require("metricsd"),
       prefix: process.env.METRICSD_PREFIX
     });
 
-var APPS = {
-  "d.6e900816-356b-4a9f-92d6-7d9d6f7876ab": "sandwich-maker",
-  "d.0f6953d8-d6fb-49ad-841b-2f1f938a1a57": "stamen-siphon-sandwich-maker",
-  "d.6eddc999-5eab-4a76-97ef-7feed39c61cc": "stamen-geocoder"
-};
+var APPS = require("apps.json");
 
 var server = net.createServer(function(stream) {
   stream.setEncoding("ascii");
