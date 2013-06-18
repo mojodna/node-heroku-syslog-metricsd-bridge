@@ -115,6 +115,13 @@ var server = net.createServer(function(stream) {
 
             break;
 
+          case "api":
+            if (message.match(/^Deploy/)) {
+              metrics.mark(util.format("%s.deploy", app));
+            }
+
+            break;
+
           default:
             // console.log("process: %s.%d", process, processNum);
             console.log(line);
