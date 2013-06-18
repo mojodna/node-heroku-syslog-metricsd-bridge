@@ -143,11 +143,17 @@ var server = net.createServer(function(stream) {
           break;
 
         case "app":
-          if (data.metric) {
-            metrics.write(util.format("%s.%s.%s", metrics.prefix, app, data.metric));
+          switch (process) {
+          case "heroku-postgres":
+            console.log(line);
+            break;
+
+          default:
+            if (data.metric) {
+              metrics.write(util.format("%s.%s.%s", metrics.prefix, app, data.metric));
+            }
           }
-          // console.log("process: %s.%d", process, processNum);
-          // console.log("message:", message);
+
           break;
 
         default:
