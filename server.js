@@ -11,6 +11,8 @@ var metricsd = require("metricsd"),
     });
 
 var APPS = require("./apps.json");
+var KVP_SPLITTER = new RegExp(/(\S+=(?:\"[^\"]*\"|\S+))\s?/);
+var LINE_MATCHER = new RegExp(/^(\d+) \<(\d+)\>\w+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2}) ([\w\-\.]+) (\w+) (\w+)(\.(\d+))? - - (.*)$/);
 
 var server = net.createServer(function(stream) {
   stream.setEncoding("ascii");
@@ -31,7 +33,7 @@ var server = net.createServer(function(stream) {
       line = line.slice(0, -1);
 
       var matches;
-      if ((matches = line.match(/^(\d+) \<(\d+)\>\w+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2}) ([\w\-\.]+) (\w+) (\w+)(\.(\d+))? - - (.*)$/))) {
+      if ((matches = line.match(LINE_MATCHER))) {
         var length = matches[1].trim();
         var priority = matches[2];
         var timestamp = matches[3].trim();
@@ -48,7 +50,7 @@ var server = net.createServer(function(stream) {
           return;
         }
 
-        var kvp = message.split(/(\S+=(?:\"[^\"]*\"|\S+))\s?/).filter(function(x) {
+        var kvp = message.split(KVP_SPLITTER).filter(function(x) {
           return !!x;
         }).map(function(x) {
           return x.split("=", 2);
@@ -94,9 +96,9 @@ var server = net.createServer(function(stream) {
             if (data.measure && data.val) {
               var val = +data.val;
 
-              if (data.measure.match(/^load_avg/)) {
+              if (data.measure.indexOf("load_avg") === 0) {
                 val = val * 100;
-              } else if (data.measure.match(/^memory/)) {
+              } else if (data.measure.indexOf("memory") === 0) {
                 // convert to KB
                 val = val * 1024;
               }
@@ -119,9 +121,9 @@ var server = net.createServer(function(stream) {
             break;
 
           case "api":
-            if (message.match(/^Deploy/)) {
+            if (message.indexOf("Deploy") === 0) {
               metrics.mark(util.format("%s.deploy", app));
-            } else if (message.match(/^Scale/)) {
+            } else if (message.indexOf("Scale") === 0) {
               // TODO delete gauges associated with instances that no longer
               // exist
               // TODO delete histograms if count=0
