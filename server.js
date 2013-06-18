@@ -70,17 +70,17 @@ var server = net.createServer(function(stream) {
 
           switch (process) {
           case "router":
-            metric = {
-              connect: +((data.connect || "").slice(0, -2)),
-              service: +((data.service || "").slice(0, -2)),
-              status: data.status[0] + "xx"
-            };
-
             // TODO when is data.status undefined?
             if (!data.status) {
               console.log(line);
               return;
             }
+
+            metric = {
+              connect: +((data.connect || "").slice(0, -2)),
+              service: +((data.service || "").slice(0, -2)),
+              status: data.status[0] + "xx"
+            };
 
             metrics.updateHistogram(util.format("%s.connect", app), metric.connect);
             metrics.updateHistogram(util.format("%s.service", app), metric.service);
