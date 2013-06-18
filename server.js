@@ -118,6 +118,8 @@ var server = net.createServer(function(stream) {
           case "api":
             if (message.match(/^Deploy/)) {
               metrics.mark(util.format("%s.deploy", app));
+            } else {
+              console.log(line);
             }
 
             break;
