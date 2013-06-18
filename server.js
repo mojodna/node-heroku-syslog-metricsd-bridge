@@ -122,7 +122,10 @@ var server = net.createServer(function(stream) {
             if (message.match(/^Deploy/)) {
               metrics.mark(util.format("%s.deploy", app));
             } else if (message.match(/^Scale/)) {
-              var type = Object.keys[data][0];
+              // TODO delete gauges associated with instances that no longer
+              // exist
+              // TODO delete histograms if count=0
+              var type = Object.keys(data)[0];
               metrics.updateGauge(util.format("%s.%s", app, type), data[type]);
             } else {
               console.log(line);
