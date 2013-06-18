@@ -48,20 +48,23 @@ var server = net.createServer(function(stream) {
           return;
         }
 
+        var kvp = message.split(/(\S+=(?:\"[^\"]*\"|\S+))\s?/).filter(function(x) {
+          return !!x;
+        }).map(function(x) {
+          return x.split("=", 2);
+        });
+
+        var data = {};
+
+        kvp.forEach(function(x) {
+          if (x[1]) {
+            data[x[0]] = x[1];
+          }
+        });
+
         switch (source) {
         case "heroku":
-          var kvp = message.split(/(\S+=(?:\"[^\"]*\"|\S+))\s?/).filter(function(x) {
-            return !!x;
-          }).map(function(x) {
-            return x.split("=", 2);
-          });
-
-          var data = {};
           var metric = {};
-
-          kvp.forEach(function(x) {
-            data[x[0]] = x[1];
-          });
 
           switch (process) {
           case "router":
@@ -132,17 +135,6 @@ var server = net.createServer(function(stream) {
           break;
 
         case "app":
-          var kvp = message.split(/(\S+=(?:\"[^\"]*\"|\S+))\s?/).filter(function(x) {
-            return !!x;
-          }).map(function(x) {
-            return x.split("=", 2);
-          });
-
-          var data = {};
-          kvp.forEach(function(x) {
-            data[x[0]] = x[1];
-          });
-
           if (data.metric) {
             metrics.write(util.format("%s.%s.%s", metrics.prefix, app, data.metric));
           }
