@@ -10,7 +10,7 @@ var metricsd = require("metricsd"),
       prefix: process.env.METRICSD_PREFIX
     });
 
-var APPS = require("apps.json");
+var APPS = require("./apps.json");
 
 var server = net.createServer(function(stream) {
   stream.setEncoding("ascii");
