@@ -34,6 +34,7 @@ var server = net.createServer(function(stream) {
 
       var matches;
       if ((matches = line.match(LINE_MATCHER))) {
+        // TODO use length to validate line
         var length = matches[1].trim();
         var priority = matches[2];
         var timestamp = matches[3].trim();
@@ -71,6 +72,7 @@ var server = net.createServer(function(stream) {
           switch (process) {
           case "router":
             // TODO when is data.status undefined?
+            // probably when we're looking at an invalid line
             if (!data.status) {
               console.log(line);
               return;
