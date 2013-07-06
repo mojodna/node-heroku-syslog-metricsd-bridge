@@ -12,7 +12,7 @@ var metricsd = require("metricsd"),
 
 var APPS = require("./apps.json");
 var KVP_SPLITTER = new RegExp(/(\S+=(?:\"[^\"]*\"|\S+))\s?/);
-var LINE_MATCHER = new RegExp(/^(\d+) \<(\d+)\>\w+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2}) ([\w\-\.]+) (\w+) (\w+)(\.(\d+))? - - (.*)$/);
+var LINE_MATCHER = new RegExp(/^(\d+) \<(\d+)\>\w+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(\+\d{2}:\d{2}|Z)) ([\w\-\.]+) (\w+) ([\w-]+)(\.(\d+))? - - (.*)$/);
 
 var server = net.createServer(function(stream) {
   stream.setEncoding("ascii");
@@ -38,11 +38,11 @@ var server = net.createServer(function(stream) {
         var length = matches[1].trim();
         var priority = matches[2];
         var timestamp = matches[3].trim();
-        var drainId = matches[4].trim();
-        var source = matches[5].trim();
-        var process = matches[6].trim();
-        var processNum = (matches[8] || "").trim();
-        var message = matches[9].trim();
+        var drainId = matches[6].trim();
+        var source = matches[7].trim();
+        var process = matches[8].trim();
+        var processNum = (matches[10] || "").trim();
+        var message = matches[11].trim();
 
         var app = APPS[drainId];
 
@@ -146,8 +146,21 @@ var server = net.createServer(function(stream) {
 
         case "app":
           switch (process) {
-          case "heroku-postgres":
+          // postgres logs
+          case "postgres":
             console.log(line);
+            break;
+
+          // general postgres metrics
+          case "heroku-postgres":
+            var source = data.source;
+            metrics.updateGauge(util.format("%s.db_size", source), parseInt(data["measure.db_size"]));
+            metrics.updateGauge(util.format("%s.tables", source), +data["measure.tables"]);
+            metrics.updateGauge(util.format("%s.active-connections", source), +data["measure.active-connections"]);
+            metrics.updateGauge(util.format("%s.waiting-connections", source), +data["measure.waiting-connections"]);
+            metrics.updateGauge(util.format("%s.index-cache-hit-rate", source), +data["measure.index-cache-hit-rate"] * 100000);
+            metrics.updateGauge(util.format("%s.table-cache-hit-rate", source), +data["measure.table-cache-hit-rate"] * 100000);
+
             break;
 
           default:
@@ -161,9 +174,9 @@ var server = net.createServer(function(stream) {
         default:
           console.log("Unrecognized source:", source);
         }
+      } else {
+        console.log("Unmatched:", line);
       }
-
-      // console.log(line);
     });
   });
 });
