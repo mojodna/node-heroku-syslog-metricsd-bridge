@@ -1,7 +1,6 @@
 "use strict";
 
-var net = require("net"),
-    util = require("util");
+var net = require("net");
 
 var metricsd = require("metricsd"),
     metrics = metricsd({
@@ -84,12 +83,12 @@ var server = net.createServer(function(stream) {
               status: data.status[0] + "xx"
             };
 
-            metrics.updateHistogram(util.format("%s.connect", app), metric.connect);
-            metrics.updateHistogram(util.format("%s.service", app), metric.service);
-            metrics.mark(util.format("%s.status.%s", app, metric.status));
+            metrics.updateHistogram("%s.connect", app, metric.connect);
+            metrics.updateHistogram("%s.service", app, metric.service);
+            metrics.mark("%s.status.%s", app, metric.status);
 
             if (data.at === "error") {
-              metrics.mark(util.format("%s.errors.%s", app, data.code));
+              metrics.mark("%s.errors.%s", app, data.code);
             }
 
             break;
@@ -107,16 +106,16 @@ var server = net.createServer(function(stream) {
 
               metric[data.measure] = Math.round(val);
 
-              metrics.updateGauge(util.format("%s.%s-%s.%s",
-                                              app,
-                                              process,
-                                              processNum,
-                                              data.measure),
+              metrics.updateGauge("%s.%s-%s.%s",
+                                  app,
+                                  process,
+                                  processNum,
+                                  data.measure,
                                   metric[data.measure]);
 
-              metrics.updateHistogram(util.format("%s.%s",
-                                                  app,
-                                                  data.measure),
+              metrics.updateHistogram("%s.%s",
+                                      app,
+                                      data.measure,
                                       metric[data.measure]);
             }
 
@@ -124,13 +123,13 @@ var server = net.createServer(function(stream) {
 
           case "api":
             if (message.indexOf("Deploy") === 0) {
-              metrics.mark(util.format("%s.deploy", app));
+              metrics.mark("%s.deploy", app);
             } else if (message.indexOf("Scale") === 0) {
               // TODO delete gauges associated with instances that no longer
               // exist
               // TODO delete histograms if count=0
               var type = Object.keys(data)[0];
-              metrics.updateGauge(util.format("%s.%s", app, type), data[type]);
+              metrics.updateGauge("%s.%s", app, type, data[type]);
             } else {
               console.log(line);
             }
@@ -154,18 +153,18 @@ var server = net.createServer(function(stream) {
           // general postgres metrics
           case "heroku-postgres":
             var source = data.source;
-            metrics.updateGauge(util.format("%s.db_size", source), parseInt(data["measure.db_size"]));
-            metrics.updateGauge(util.format("%s.tables", source), +data["measure.tables"]);
-            metrics.updateGauge(util.format("%s.active-connections", source), +data["measure.active-connections"]);
-            metrics.updateGauge(util.format("%s.waiting-connections", source), +data["measure.waiting-connections"]);
-            metrics.updateGauge(util.format("%s.index-cache-hit-rate", source), +data["measure.index-cache-hit-rate"] * 100000);
-            metrics.updateGauge(util.format("%s.table-cache-hit-rate", source), +data["measure.table-cache-hit-rate"] * 100000);
+            metrics.updateGauge("%s.db_size", source, parseInt(data["measure.db_size"]));
+            metrics.updateGauge("%s.tables", source, +data["measure.tables"]);
+            metrics.updateGauge("%s.active-connections", source, +data["measure.active-connections"]);
+            metrics.updateGauge("%s.waiting-connections", source, +data["measure.waiting-connections"]);
+            metrics.updateGauge("%s.index-cache-hit-rate", source, +data["measure.index-cache-hit-rate"] * 100000);
+            metrics.updateGauge("%s.table-cache-hit-rate", source, +data["measure.table-cache-hit-rate"] * 100000);
 
             break;
 
           default:
             if (data.metric) {
-              metrics.write(util.format("%s.%s.%s", metrics.prefix, app, data.metric));
+              metrics.write(metrics.format("%s.%s", app, data.metric));
             }
           }
 

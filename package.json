@@ -3,13 +3,10 @@
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": "",
   "author": "",
   "license": "BSD",
   "dependencies": {
-    "metricsd": "~0.1.4"
+    "metricsd": "~0.2.1"
   }
 }
