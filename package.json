@@ -7,6 +7,6 @@
   "author": "",
   "license": "BSD",
   "dependencies": {
-    "metricsd": "~0.2.1"
+    "metricsd": "~0.2.2"
   }
 }
