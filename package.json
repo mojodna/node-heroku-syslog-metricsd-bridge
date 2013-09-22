@@ -3,10 +3,21 @@
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
-  "repository": "",
-  "author": "",
+  "author": "Seth Fitzsimmons <seth@mojodna.net>",
+  "homepage": "https://github.com/mojodna/node-heroku-syslog-metricsd-bridge",
+  "bugs": "https://github.com/mojodna/node-heroku-syslog-metricsd-bridge/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mojodna/node-heroku-syslog-metricsd-bridge.git"
+  },
   "license": "BSD",
+  "scripts": {
+    "test": "node_modules/.bin/mocha"
+  },
   "dependencies": {
     "metricsd": "~0.2.2"
+  },
+  "devDependencies": {
+    "mocha": "~1.13.0"
   }
 }
