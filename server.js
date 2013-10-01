@@ -10,47 +10,26 @@ var carrier = require("carrier"),
       prefix: process.env.METRICSD_PREFIX
     });
 
+var bridge = require("./lib");
+
 var APPS = require("./apps.json");
-var KVP_SPLITTER = new RegExp(/(\S+=(?:\"[^\"]*\"|\S+))\s?/);
 var LINE_MATCHER = new RegExp(/^(\d+) \<(\d+)\>\w+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(\+\d{2}:\d{2}|Z)) ([\w\-\.]+) (\w+) ([\w-]+)(\.(\d+))? - - (.*)$/);
 
 var server = net.createServer(function(stream) {
   carrier.carry(stream, function(line) {
-    var matches;
-
-    if ((matches = line.match(LINE_MATCHER))) {
-      // TODO use length to validate line
-      var length = matches[1].trim();
-      var priority = matches[2];
-      var timestamp = matches[3].trim();
-      var drainId = matches[6].trim();
-      var source = matches[7].trim();
-      var process = matches[8].trim();
-      var processNum = (matches[10] || "").trim();
-      var message = matches[11].trim();
-
-      var app = APPS[drainId];
+    var log = bridge.syslog(line);
+    
+    if (log) {
+      var app = APPS[log.drainId];
 
       if (!app) {
-        console.log("Unrecognized drain id:", drainId);
+        console.log("Unrecognized drain id:", log.drainId);
         return;
       }
 
-      var kvp = message.split(KVP_SPLITTER).filter(function(x) {
-        return !!x;
-      }).map(function(x) {
-        return x.split("=", 2);
-      });
+      var data = bridge.extract(log.message);
 
-      var data = {};
-
-      kvp.forEach(function(x) {
-        if (x[1]) {
-          data[x[0]] = x[1];
-        }
-      });
-
-      switch (source) {
+      switch (log.source) {
       case "heroku":
         var metric = {};
 
@@ -80,37 +59,34 @@ var server = net.createServer(function(stream) {
           break;
 
         case "web":
-          if (data.measure && data.val) {
-            var val = +data.val;
+          if (data.samples) {
+            Object.keys(data.samples).forEach(function(metric) {
+              var val = data.samples[metric];
 
-            if (data.measure.indexOf("load_avg") === 0) {
-              val = val * 100;
-            } else if (data.measure.indexOf("memory") === 0) {
-              // convert to KB
-              val = val * 1024;
-            }
+              if (metric.indexOf("load_avg") >= 0) {
+                val *= 100;
+              }
 
-            metric[data.measure] = Math.round(val);
+              metrics.updateGauge("%s.%s-%s.%s",
+                                  app,
+                                  log.process,
+                                  log.processNum,
+                                  metric,
+                                  val);
 
-            metrics.updateGauge("%s.%s-%s.%s",
-                                app,
-                                process,
-                                processNum,
-                                data.measure,
-                                metric[data.measure]);
-
-            metrics.updateHistogram("%s.%s",
-                                    app,
-                                    data.measure,
-                                    metric[data.measure]);
+              metrics.updateHistogram("%s.%s",
+                                      app,
+                                      metric,
+                                      val);
+            });
           }
 
           break;
 
         case "api":
-          if (message.indexOf("Deploy") === 0) {
+          if (log.message.indexOf("Deploy") === 0) {
             metrics.mark("%s.deploy", app);
-          } else if (message.indexOf("Scale") === 0) {
+          } else if (log.message.indexOf("Scale") === 0) {
             // TODO delete gauges associated with instances that no longer
             // exist
             // TODO delete histograms if count=0
@@ -138,13 +114,15 @@ var server = net.createServer(function(stream) {
 
         // general postgres metrics
         case "heroku-postgres":
-          var source = data.source;
-          metrics.updateGauge("%s.db_size", source, parseInt(data["measure.db_size"]));
-          metrics.updateGauge("%s.tables", source, +data["measure.tables"]);
-          metrics.updateGauge("%s.active-connections", source, +data["measure.active-connections"]);
-          metrics.updateGauge("%s.waiting-connections", source, +data["measure.waiting-connections"]);
-          metrics.updateGauge("%s.index-cache-hit-rate", source, +data["measure.index-cache-hit-rate"] * 100000);
-          metrics.updateGauge("%s.table-cache-hit-rate", source, +data["measure.table-cache-hit-rate"] * 100000);
+          Object.keys(data.samples).forEach(function(metric) {
+            var val = data.samples[metric];
+
+            if (metric.indexOf("rate") >= 0) {
+              val *= 100000;
+            }
+
+            metrics.updateGauge("%s.%s", data.source, metric, val);
+          });
 
           break;
 
@@ -157,7 +135,7 @@ var server = net.createServer(function(stream) {
         break;
 
       default:
-        console.log("Unrecognized source:", source);
+        console.log("Unrecognized source:", data.source);
       }
     } else {
       console.log("Unmatched:", line);
