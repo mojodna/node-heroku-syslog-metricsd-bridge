@@ -64,7 +64,7 @@ var server = net.createServer(function(stream) {
               var val = data.samples[metric];
 
               if (metric.indexOf("load_avg") >= 0) {
-                val *= 100;
+                val = (val * 100).toFixed();
               }
 
               metrics.updateGauge("%s.%s-%s.%s",
@@ -118,7 +118,7 @@ var server = net.createServer(function(stream) {
             var val = data.samples[metric];
 
             if (metric.indexOf("rate") >= 0) {
-              val *= 100000;
+              val = (val * 100000).toFixed();
             }
 
             metrics.updateGauge("%s.%s", data.source, metric, val);
