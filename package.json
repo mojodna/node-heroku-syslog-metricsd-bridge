@@ -15,7 +15,8 @@
     "test": "node_modules/.bin/mocha"
   },
   "dependencies": {
-    "metricsd": "~0.2.3"
+    "metricsd": "~0.2.3",
+    "carrier": "~0.1.13"
   },
   "devDependencies": {
     "mocha": "~1.13.0"
