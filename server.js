@@ -33,7 +33,7 @@ var server = net.createServer(function(stream) {
       case "heroku":
         var metric = {};
 
-        switch (process) {
+        switch (log.process) {
         case "router":
           // TODO when is data.status undefined?
           // probably when we're looking at an invalid line
