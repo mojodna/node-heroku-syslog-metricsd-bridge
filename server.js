@@ -58,6 +58,7 @@ var server = net.createServer(function(stream) {
 
           break;
 
+        case "worker":
         case "web":
           if (data.samples) {
             Object.keys(data.samples).forEach(function(metric) {
